@@ -157,7 +157,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 	mign := &machine.Master{}
 	dependencies.Get(clusterID, installConfig, rhcosImage, mign)
 
-	masterUserDataSecretName := "master-user-data"
+	masterUserDataSecretName := "master-user-data-managed"
 
 	ic := installConfig.Config
 

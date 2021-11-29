@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	baremetalapi "github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis"
-	baremetalprovider "github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
+	baremetalapi "github.com/openshift/cluster-api-provider-baremetal/pkg/apis"
+	baremetalprovider "github.com/openshift/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
 	machineapi "github.com/openshift/api/machine/v1beta1"
 	alibabacloudapi "github.com/openshift/cluster-api-provider-alibaba/pkg/apis"
 	alibabacloudprovider "github.com/openshift/cluster-api-provider-alibaba/pkg/apis/alibabacloudprovider/v1beta1"

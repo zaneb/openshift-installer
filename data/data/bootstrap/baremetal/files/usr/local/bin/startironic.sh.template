@@ -184,13 +184,11 @@ fi
 # Embed agent ignition into the rhcos live iso
 sudo podman run -d --net host --privileged --name image-customization \
     --env DEPLOY_ISO="/shared/html/images/ironic-python-agent.iso" \
+    --env DEPLOY_INITRD="/shared/html/images/ironic-python-agent.initramfs" \
     --env IRONIC_BASE_URL="http://${IRONIC_HOST}" \
-    --env IRONIC_AGENT_IMAGE="" \
-    --env IRONIC_AGENT_PULL_SECRET="" \
     --env IRONIC_RAMDISK_SSH_KEY="$IRONIC_RAMDISK_SSH_KEY" \
     --env IRONIC_AGENT_IMAGE="$IRONIC_AGENT_IMAGE" \
     --env IRONIC_AGENT_PULL_SECRET="{{.PlatformData.BareMetal.PullSecretBase64}}" \
-    --env DEPLOY_INITRD="/shared/html/images/ironic-python-agent.initramfs" \
     --env PROVISIONING_INTERFACE=$PROVISIONING_NIC \
     --env REGISTRIES_CONF_PATH=/tmp/containers/registries.conf \
     --entrypoint '["/image-customization-server", "--nmstate-dir=/tmp/nmstate/", "--images-publish-addr=http://0.0.0.0:8084"]' \

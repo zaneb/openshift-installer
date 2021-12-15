@@ -172,11 +172,19 @@ mkdir -p /tmp/nmstate
     fi
 {{end}}
 
+IRONIC_IP="{{.PlatformData.BareMetal.APIVIP}}"
+# If the IP contains a colon, then it's an IPv6 address, and the HTTP
+# host needs surrounding with brackets
+if [[ "$IRONIC_IP" =~ .*:.* ]]; then
+    IRONIC_HOST="[${IRONIC_IP}]"
+else
+    IRONIC_HOST="${IRONIC_IP}"
+fi
 
 # Embed agent ignition into the rhcos live iso
 sudo podman run -d --net host --privileged --name image-customization \
     --env DEPLOY_ISO="/shared/html/images/ironic-python-agent.iso" \
-    --env IRONIC_BASE_URL="http://{{.PlatformData.BareMetal.APIVIP}}" \
+    --env IRONIC_BASE_URL="http://${IRONIC_HOST}" \
     --env IRONIC_AGENT_IMAGE="" \
     --env IRONIC_AGENT_PULL_SECRET="" \
     --env IRONIC_RAMDISK_SSH_KEY="$IRONIC_RAMDISK_SSH_KEY" \

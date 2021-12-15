@@ -174,7 +174,7 @@ mkdir -p /tmp/nmstate
 
 
 # Embed agent ignition into the rhcos live iso
-sudo podman run -d -p 8084:8084 --privileged --name image-customization \
+sudo podman run -d --net host --privileged --name image-customization \
     --env DEPLOY_ISO="/shared/html/images/ironic-python-agent.iso" \
     --env IRONIC_BASE_URL="http://{{.PlatformData.BareMetal.APIVIP}}" \
     --env IRONIC_AGENT_IMAGE="" \

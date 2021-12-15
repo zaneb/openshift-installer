@@ -198,7 +198,7 @@ sudo podman run -d --net host --privileged --name ironic-conductor \
      --env PROVISIONING_INTERFACE=$PROVISIONING_NIC \
      --env OS_CONDUCTOR__HEARTBEAT_TIMEOUT=120 \
      --env HTTP_BASIC_HTPASSWD=${IRONIC_HTPASSWD} \
-     --env IRONIC_KERNEL_PARAMS="${IRONIC_KERNEL_PARAMS}" \
+     --env IRONIC_KERNEL_PARAMS=${IP_OPTIONS} \
      --entrypoint /bin/runironic-conductor \
      -v $AUTH_DIR:/auth:ro \
      -v $IRONIC_SHARED_VOLUME:/shared:z ${IRONIC_IMAGE}
@@ -210,6 +210,7 @@ podman run -d --net host --privileged --name ironic-inspector \
      --restart on-failure \
      --env PROVISIONING_INTERFACE=$PROVISIONING_NIC \
      --env HTTP_BASIC_HTPASSWD=${IRONIC_HTPASSWD} \
+     --env IRONIC_KERNEL_PARAMS=${IP_OPTIONS} \
      --entrypoint /bin/runironic-inspector \
      -v $AUTH_DIR:/auth:ro \
      -v $IRONIC_SHARED_VOLUME:/shared:z "${IRONIC_IMAGE}"

@@ -6,12 +6,15 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/awalterschulze/gographviz"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/kubeconfig"
+	"github.com/openshift/installer/pkg/asset/tls"
 )
 
 var (
@@ -32,12 +35,179 @@ func newGraphCmd() *cobra.Command {
 	return cmd
 }
 
+func isCertKeyOrCABundle(a asset.Asset) bool {
+	kind := reflect.TypeOf(a).Elem()
+	if kind.Kind() != reflect.Struct {
+		return false
+	}
+	if certField, certExists := kind.FieldByName("CertKey"); certExists && certField.Type.AssignableTo(reflect.TypeOf(tls.CertKey{})) {
+		return true
+	}
+	if bundleField, bundleExists := kind.FieldByName("CertBundle"); bundleExists && bundleField.Type.AssignableTo(reflect.TypeOf(tls.CertBundle{})) {
+		return true
+	}
+	return false
+}
+
+func overrideWritable(a asset.Asset) writability {
+	switch assetName(a) {
+	case "AdminKubeConfigClientCertKey", "KubeAPIServerCompleteCABundle", "KubeAPIServerCompleteClientCABundle", "AdminKubeConfigCABundle", "KubeAPIServerLocalhostCABundle", "KubeControlPlaneCABundle", "KubeAPIServerLocalhostServerCertKey", "KubeAPIServerServiceNetworkServerCertKey", "KubeAPIServerServiceNetworkCABundle", "KubeAPIServerInternalLBServerCertKey", "KubeAPIServerLBCABundle", "KubeAPIServerExternalLBServerCertKey", "KubeAPIServerLocalhostSignerCertKey", "KubeAPIServerServiceNetworkSignerCertKey", "KubeAPIServerLBSignerCertKey":
+		if !isCertKeyOrCABundle(a) {
+			panic(fmt.Errorf("%s is not a CertKey or CABundle", assetName(a)))
+		}
+		return override
+	default:
+		if isCertKeyOrCABundle(a) {
+			return overrideEffective
+		}
+		return nonrw
+	}
+}
+
+
+type writability int
+const (
+	nonrw writability = iota
+	rw
+	override
+	overrideEffective
+)
+
+func isWritable(a asset.Asset) bool {
+	_, ok := a.(asset.WritableAsset)
+	return ok
+}
+
+func isReadWrite(a asset.Asset) writability {
+	if wa, ok := a.(asset.WritableAsset); ok {
+		_, err := wa.Load(&failureFetcher{})
+		if err != nil {
+			return rw
+		}
+	}
+	return overrideWritable(a)
+}
+
+func assetName(a asset.Asset) string {
+	return reflect.TypeOf(a).Elem().Name()
+}
+
+type assetGraph map[string]map[string]writability
+
+func (ag assetGraph) insert(parent, child string, value writability) {
+	if _, exists := ag[parent]; !exists {
+		ag[parent] = map[string]writability{}
+	}
+	ag[parent][child] = value
+}
+
+func reverseGraph(root asset.Asset) assetGraph {
+	rName := assetName(root)
+	isRW := isReadWrite(root)
+	g := assetGraph{}
+	for _, d := range root.Dependencies() {
+		dName := assetName(d)
+		g.insert(dName, rName, isRW)
+
+		subGraph := reverseGraph(d)
+		for k, v := range subGraph {
+			for p, b := range v {
+				g.insert(k, p, b)
+			}
+		}
+	}
+	return g
+}
+
+func parents(a string, rg assetGraph) []string {
+	result := []string{}
+	for p, w := range rg[a] {
+		if w != nonrw {
+			result = append(result, p)
+		} else {
+			gps := parents(p, rg)
+			fmt.Fprintf(os.Stderr, "Unloadable intermediate %s => %s\n", p, strings.Join(gps, ", "))
+			result = append(result, gps...)
+		}
+	}
+	return result
+}
+
+func getAllWritableParents(constituents []asset.Asset, root asset.Asset) []asset.Asset {
+	rg := reverseGraph(root)
+	names := map[string]bool{}
+	for _, c := range constituents {
+		cName := assetName(c)
+		names[cName] = true
+		isRW := isReadWrite(c)
+		if isRW == nonrw {
+			ps := parents(cName, rg)
+			fmt.Fprintf(os.Stderr, "Parents of %s: %s\n", cName, strings.Join(ps, ", "))
+			for _, p := range ps {
+				names[p] = true
+			}
+		}
+	}
+	allDeps := getAllDependencies(root)
+	output := []asset.Asset{}
+	for _, a := range(allDeps) {
+		aName := assetName(a)
+		if unseen, present := names[aName]; (present && unseen) || isReadWrite(a) == override {
+			output = append(output, a)
+			names[aName] = false
+		}
+	}
+	return output
+}
+
+func getAllDependencies(a asset.Asset) []asset.Asset {
+	deps := []asset.Asset{a}
+	for _, d := range a.Dependencies() {
+		deps = append(deps, getAllDependencies(d)...)
+	}
+
+	return deps
+}
+
+func dependencyNameList(deps []asset.Asset) string {
+	names := []string{}
+	for _, d := range deps {
+		names = append(names, assetName(d))
+	}
+	return strings.Join(names, ", ")
+}
+
+type rootTarget struct{}
+func (rt *rootTarget) Dependencies() []asset.Asset {
+	assets := []asset.Asset{}
+	for _, a := range clusterTarget.assets {
+		assets = append(assets, a)
+	}
+	return assets
+}
+func (rt *rootTarget) Generate(asset.Parents) error {
+	return nil
+}
+func (rt *rootTarget) Name() string {
+	return "root"
+}
+
+var failureFetcherFailure = fmt.Errorf("Tried to load file")
+type failureFetcher struct{}
+func (ff failureFetcher) FetchByName(string) (*asset.File, error) {
+	return nil, failureFetcherFailure
+}
+func (ff failureFetcher) FetchByPattern(string) ([]*asset.File, error) {
+	return nil, failureFetcherFailure
+}
+
 func runGraphCmd(cmd *cobra.Command, args []string) error {
 	g := gographviz.NewGraph()
 	g.SetName("G")
 	g.SetDir(true)
 	g.SetStrict(true)
 
+	/*
 	tNodeAttr := map[string]string{
 		string(gographviz.Shape): "box",
 		string(gographviz.Style): "filled",
@@ -48,6 +218,13 @@ func runGraphCmd(cmd *cobra.Command, args []string) error {
 		for _, dep := range t.assets {
 			addEdge(g, name, dep)
 		}
+	}
+	*/
+	g.AddSubGraph("G", "overrides", map[string]string{"label": "overrides"})
+	constituents := getAllDependencies(&kubeconfig.AdminClient{})
+	fmt.Fprintf(os.Stderr, "Got initial constituents: %s\n", dependencyNameList(constituents))
+	for _, p := range getAllWritableParents(constituents, &rootTarget{}) {
+		addEdge(g, "overrides", p)
 	}
 
 	g.AddAttr("G", "rankdir", "LR")
@@ -83,7 +260,19 @@ func addEdge(g *gographviz.Graph, parent string, asset asset.Asset) {
 
 	if !g.IsNode(name) {
 		logrus.Debugf("adding node %s", name)
-		g.AddNode("G", name, nil)
+		colour := "red"
+		switch isReadWrite(asset) {
+		case nonrw:
+			if !isWritable(asset) {
+				colour = "grey"
+			}
+		case rw:
+			colour = "green"
+		case override:
+		//case override, overrideEffective:
+			colour = "blue"
+		}
+		g.AddNode("G", name, map[string]string{"color": colour})
 	}
 	if !isEdge(g, name, parent) {
 		logrus.Debugf("adding edge %s -> %s", name, parent)

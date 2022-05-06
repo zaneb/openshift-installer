@@ -35,31 +35,32 @@ func newGraphCmd() *cobra.Command {
 	return cmd
 }
 
-func isCertKeyOrCABundle(a asset.Asset) bool {
+func isCertKey(a asset.Asset) bool {
 	kind := reflect.TypeOf(a).Elem()
 	if kind.Kind() != reflect.Struct {
 		return false
 	}
-	if certField, certExists := kind.FieldByName("CertKey"); certExists && certField.Type.AssignableTo(reflect.TypeOf(tls.CertKey{})) {
-		return true
+	certField, certExists := kind.FieldByName("CertKey")
+	return certExists && certField.Type.AssignableTo(reflect.TypeOf(tls.CertKey{}))
+}
+
+func isCABundle(a asset.Asset) bool {
+	kind := reflect.TypeOf(a).Elem()
+	if kind.Kind() != reflect.Struct {
+		return false
 	}
-	if bundleField, bundleExists := kind.FieldByName("CertBundle"); bundleExists && bundleField.Type.AssignableTo(reflect.TypeOf(tls.CertBundle{})) {
-		return true
-	}
-	return false
+	bundleField, bundleExists := kind.FieldByName("CertBundle")
+	return bundleExists && bundleField.Type.AssignableTo(reflect.TypeOf(tls.CertBundle{}))
 }
 
 func overrideWritable(a asset.Asset) writability {
 	switch assetName(a) {
-	case "AdminKubeConfigClientCertKey", "KubeAPIServerCompleteCABundle", "AdminKubeConfigCABundle", "KubeAPIServerLocalhostCABundle", "KubeControlPlaneCABundle", "KubeAPIServerLocalhostServerCertKey", "KubeAPIServerServiceNetworkServerCertKey", "KubeAPIServerServiceNetworkCABundle", "KubeAPIServerInternalLBServerCertKey", "KubeAPIServerLBCABundle", "KubeAPIServerExternalLBServerCertKey", "KubeAPIServerLocalhostSignerCertKey", "KubeAPIServerServiceNetworkSignerCertKey", "KubeAPIServerLBSignerCertKey":
-		if !isCertKeyOrCABundle(a) {
-			panic(fmt.Errorf("%s is not a CertKey or CABundle", assetName(a)))
+	case "AdminKubeConfigSignerCertKey", "AdminKubeConfigClientCertKey", "KubeAPIServerLocalhostSignerCertKey", "KubeAPIServerServiceNetworkSignerCertKey", "KubeAPIServerLBSignerCertKey":
+		if !isCertKey(a) {
+			panic(fmt.Errorf("%s is not a CertKey", assetName(a)))
 		}
 		return override
 	default:
-		if isCertKeyOrCABundle(a) {
-			return overrideEffective
-		}
 		return nonrw
 	}
 }
@@ -221,7 +222,13 @@ func runGraphCmd(cmd *cobra.Command, args []string) error {
 	}
 	*/
 	g.AddSubGraph("G", "overrides", map[string]string{"label": "overrides"})
-	constituents := getAllDependencies(&kubeconfig.AdminClient{})
+	constituents := []asset.Asset{}
+	for _, c := range getAllDependencies(&kubeconfig.AdminClient{}) {
+		// CABundles don't add any new information
+		if !isCABundle(c) {
+			constituents = append(constituents, c)
+		}
+	}
 	fmt.Fprintf(os.Stderr, "Got initial constituents: %s\n", dependencyNameList(constituents))
 	for _, p := range getAllWritableParents(constituents, &rootTarget{}) {
 		addEdge(g, "overrides", p)

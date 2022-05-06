@@ -51,7 +51,7 @@ func isCertKeyOrCABundle(a asset.Asset) bool {
 
 func overrideWritable(a asset.Asset) writability {
 	switch assetName(a) {
-	case "AdminKubeConfigClientCertKey", "KubeAPIServerCompleteCABundle", "KubeAPIServerCompleteClientCABundle", "AdminKubeConfigCABundle", "KubeAPIServerLocalhostCABundle", "KubeControlPlaneCABundle", "KubeAPIServerLocalhostServerCertKey", "KubeAPIServerServiceNetworkServerCertKey", "KubeAPIServerServiceNetworkCABundle", "KubeAPIServerInternalLBServerCertKey", "KubeAPIServerLBCABundle", "KubeAPIServerExternalLBServerCertKey", "KubeAPIServerLocalhostSignerCertKey", "KubeAPIServerServiceNetworkSignerCertKey", "KubeAPIServerLBSignerCertKey":
+	case "AdminKubeConfigClientCertKey", "KubeAPIServerCompleteCABundle", "AdminKubeConfigCABundle", "KubeAPIServerLocalhostCABundle", "KubeControlPlaneCABundle", "KubeAPIServerLocalhostServerCertKey", "KubeAPIServerServiceNetworkServerCertKey", "KubeAPIServerServiceNetworkCABundle", "KubeAPIServerInternalLBServerCertKey", "KubeAPIServerLBCABundle", "KubeAPIServerExternalLBServerCertKey", "KubeAPIServerLocalhostSignerCertKey", "KubeAPIServerServiceNetworkSignerCertKey", "KubeAPIServerLBSignerCertKey":
 		if !isCertKeyOrCABundle(a) {
 			panic(fmt.Errorf("%s is not a CertKey or CABundle", assetName(a)))
 		}

@@ -59,7 +59,7 @@ const (
 func (r *release) GetBaseIso(log logrus.FieldLogger, releaseImage string, pullSecret string, mirrorConfig []mirror.RegistriesConfig, architecture string) (string, error) {
 
 	// Get the machine-os-images pullspec from the release and use that to get the CoreOS ISO
-	image, err := r.getImageFromRelease(log, machineOsImageName, releaseImage, pullSecret)
+	image, err := r.getImageFromRelease(log, machineOsImageName, releaseImage, pullSecret, len(mirrorConfig) > 0)
 	if err != nil {
 		return "", err
 	}
@@ -87,11 +87,15 @@ func (r *release) GetBaseIso(log logrus.FieldLogger, releaseImage string, pullSe
 	return path, err
 }
 
-func (r *release) getImageFromRelease(log logrus.FieldLogger, imageName, releaseImage, pullSecret string) (string, error) {
+func (r *release) getImageFromRelease(log logrus.FieldLogger, imageName, releaseImage, pullSecret string, haveMirror bool) (string, error) {
 	// This requires the 'oc' command so make sure its available
 	_, err := exec.LookPath("oc")
 	if err != nil {
-		log.Warning("\"oc\" command to extract ISO from release payload was not found; cannot validate the mirror registry if configured")
+		if haveMirror {
+			log.Warning("Unable to validate mirror config because \"oc\" command is not available")
+		} else {
+			log.Debug("Skipping ISO extraction; \"oc\" command is not available")
+		}
 		return "", err
 	}
 

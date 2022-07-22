@@ -91,7 +91,7 @@ func (r *release) getImageFromRelease(log logrus.FieldLogger, imageName, release
 	// This requires the 'oc' command so make sure its available
 	_, err := exec.LookPath("oc")
 	if err != nil {
-		log.Warning("\"oc\" command to extract ISO from release payload was not found, an attempt will be made to download the ISO")
+		log.Warning("\"oc\" command to extract ISO from release payload was not found; cannot validate the mirror registry if configured")
 		return "", err
 	}
 
@@ -128,7 +128,8 @@ func (r *release) extractFileFromImage(log logrus.FieldLogger, image, file, cach
 	}
 	// set path
 	path := filepath.Join(cacheDir, file)
-	log.Infof("Successfully extracted %s ISO from the release to: %s", file, path)
+	log.Info("Successfully extracted base ISO from the release")
+	log.Debugf("Base ISO %s cached at %s", file, path)
 	return path, nil
 }
 

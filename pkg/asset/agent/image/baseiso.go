@@ -76,7 +76,7 @@ func downloadIso() (string, error) {
 
 			cachedImage, err := DownloadImageFile(url)
 			if err != nil {
-				return "", errors.Wrapf(err, "failed to download base iso image %s", url)
+				return "", errors.Wrapf(err, "failed to download base ISO image %s", url)
 			}
 			return cachedImage, nil
 		}
@@ -84,7 +84,7 @@ func downloadIso() (string, error) {
 		return "", errors.Wrap(err, "invalid artifact")
 	}
 
-	return "", fmt.Errorf("no iso found to download for %s", archName)
+	return "", fmt.Errorf("no ISO found to download for %s", archName)
 }
 
 func getIsoFromReleasePayload() (string, error) {
@@ -128,17 +128,18 @@ func (i *BaseIso) Generate(dependencies asset.Parents) error {
 		log.Info("Extracting base ISO from release payload")
 		baseIsoFileName, err := ocRelease.GetBaseIso(log, releaseImage, pullSecret, registriesConf.MirrorConfig, archName)
 		if err == nil {
-			log.Debugf("retrieved base iso image %s from release payload", baseIsoFileName)
+			log.Debugf("retrieved base ISO image %s from release payload", baseIsoFileName)
 			i.File = &asset.File{Filename: baseIsoFileName}
 			return nil
 		}
+		log.Warning("Failure getting base ISO image from release payload, attempting to download it. This may indicate a problem with the mirror registry configuration.")
 	}
 
 	// Download the Iso since it cannot be retrieved from the release payload
 	isoGetter := newGetIso(GetIsoPluggable)
 	baseIsoFileName, err := isoGetter.getter()
 	if err != nil {
-		return errors.Wrap(err, "failed to get base iso image")
+		return errors.Wrap(err, "failed to get base ISO image")
 	}
 
 	i.File = &asset.File{Filename: baseIsoFileName}

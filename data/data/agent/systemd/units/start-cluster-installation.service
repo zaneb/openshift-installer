@@ -2,8 +2,8 @@
 Description=Service that starts cluster installation
 Wants=network-online.target
 Requires=apply-host-config.service
-PartOf=assisted-service-pod.service
-After=network-online.target apply-host-config.service
+BindsTo=assisted-service-pod.service
+After=network-online.target assisted-service-pod.service apply-host-config.service
 ConditionPathExists=/etc/assisted-service/node0
 
 [Service]

@@ -12,6 +12,9 @@ import (
 // WatcherAuthHeaderWriter sets the JWT authorization token.
 func WatcherAuthHeaderWriter(token string) runtime.ClientAuthInfoWriter {
 	return runtime.ClientAuthInfoWriterFunc(func(r runtime.ClientRequest, _ strfmt.Registry) error {
+		if err := r.SetHeaderParam("Authorization", token); err != nil {
+			return err
+		}
 		return r.SetHeaderParam("Watcher-Authorization", token)
 	})
 }

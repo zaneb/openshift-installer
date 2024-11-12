@@ -84,13 +84,17 @@ func (a *AuthConfig) Generate(_ context.Context, dependencies asset.Parents) err
 		if err != nil {
 			return err
 		}
-		a.UserAuthToken = userAuthToken
+		// TODO(pawanpinjarkar): Use separate token once assisted-service supports it
+		//a.UserAuthToken = userAuthToken
+		a.UserAuthToken = agentAuthToken
 
 		watcherAuthToken, err := generateToken(watcherPersona, privateKey, nil)
 		if err != nil {
 			return err
 		}
-		a.WatcherAuthToken = watcherAuthToken
+		// TODO(pawanpinjarkar): Use separate token once assisted-service supports it
+		//a.WatcherAuthToken = watcherAuthToken
+		a.WatcherAuthToken = agentAuthToken
 
 	case workflow.AgentWorkflowTypeAddNodes:
 		addNodesConfig := &joiner.AddNodesConfig{}
@@ -110,13 +114,17 @@ func (a *AuthConfig) Generate(_ context.Context, dependencies asset.Parents) err
 		if err != nil {
 			return err
 		}
-		a.UserAuthToken = userAuthToken
+		// TODO(pawanpinjarkar): Use separate token once assisted-service supports it
+		//a.UserAuthToken = userAuthToken
+		a.UserAuthToken = agentAuthToken
 
 		watcherAuthToken, err := generateToken(watcherPersona, privateKey, &expiry)
 		if err != nil {
 			return err
 		}
-		a.WatcherAuthToken = watcherAuthToken
+		// TODO(pawanpinjarkar): Use separate token once assisted-service supports it
+		//a.WatcherAuthToken = watcherAuthToken
+		a.WatcherAuthToken = agentAuthToken
 
 		err = a.createOrUpdateAuthTokenSecret(addNodesConfig.Params.Kubeconfig)
 		if err != nil {

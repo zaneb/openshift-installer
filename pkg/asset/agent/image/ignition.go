@@ -465,9 +465,10 @@ func getRendezvousHostEnv(serviceProtocol, nodeZeroIP, agentAuthtoken, userAuthT
 SERVICE_BASE_URL=%s
 IMAGE_SERVICE_BASE_URL=%s
 PULL_SECRET_TOKEN=%s
+AGENT_AUTH_TOKEN=%s
 USER_AUTH_TOKEN=%s
 WORKFLOW_TYPE=%s
-`, nodeZeroIP, serviceBaseURL.String(), imageServiceBaseURL.String(), agentAuthtoken, userAuthToken, workflowType)
+`, nodeZeroIP, serviceBaseURL.String(), imageServiceBaseURL.String(), agentAuthtoken, agentAuthToken, userAuthToken, workflowType)
 }
 
 func getAddNodesEnv(clusterInfo joiner.ClusterInfo, authTokenExpiry string) string {

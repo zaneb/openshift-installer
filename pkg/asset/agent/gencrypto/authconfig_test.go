@@ -33,9 +33,10 @@ func TestAuthConfig_Generate(t *testing.T) {
 			assert.NotEmpty(t, authConfigAsset.AgentAuthToken)
 
 			// All the 3 tokens should be unique
-			assert.NotEqual(t, authConfigAsset.AgentAuthToken, authConfigAsset.UserAuthToken)
-			assert.NotEqual(t, authConfigAsset.AgentAuthToken, authConfigAsset.WatcherAuthToken)
-			assert.NotEqual(t, authConfigAsset.UserAuthToken, authConfigAsset.WatcherAuthToken)
+			// TODO(pawanpinjarkar): Use separate token once assisted-service supports it
+			//assert.NotEqual(t, authConfigAsset.AgentAuthToken, authConfigAsset.UserAuthToken)
+			//assert.NotEqual(t, authConfigAsset.AgentAuthToken, authConfigAsset.WatcherAuthToken)
+			//assert.NotEqual(t, authConfigAsset.UserAuthToken, authConfigAsset.WatcherAuthToken)
 
 			// verify each token is signed with correct persona
 			claims, err := ParseToken(authConfigAsset.AgentAuthToken)
@@ -47,13 +48,17 @@ func TestAuthConfig_Generate(t *testing.T) {
 			claims, err = ParseToken(authConfigAsset.UserAuthToken)
 			assert.NoError(t, err)
 			persona, ok = claims["auth_scheme"].(string)
-			assert.Equal(t, persona, userPersona)
+			// TODO(pawanpinjarkar): Use separate token once assisted-service supports it
+			//assert.Equal(t, persona, userPersona)
+			assert.Equal(t, persona, agentPersona)
 			assert.Equal(t, ok, true)
 
 			claims, err = ParseToken(authConfigAsset.WatcherAuthToken)
 			assert.NoError(t, err)
 			persona, ok = claims["auth_scheme"].(string)
-			assert.Equal(t, persona, watcherPersona)
+			// TODO(pawanpinjarkar): Use separate token once assisted-service supports it
+			//assert.Equal(t, persona, watcherPersona)
+			assert.Equal(t, persona, agentPersona)
 			assert.Equal(t, ok, true)
 		})
 	}

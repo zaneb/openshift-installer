@@ -1,6 +1,7 @@
 package defaults
 
 import (
+	"github.com/openshift/api/features"
 	operv1 "github.com/openshift/api/operator/v1"
 	"github.com/openshift/installer/pkg/ipnet"
 	"github.com/openshift/installer/pkg/rhcos"
@@ -18,6 +19,7 @@ import (
 	powervcdefaults "github.com/openshift/installer/pkg/types/powervc/defaults"
 	powervsdefaults "github.com/openshift/installer/pkg/types/powervs/defaults"
 	vspheredefaults "github.com/openshift/installer/pkg/types/vsphere/defaults"
+	"github.com/openshift/installer/pkg/version"
 )
 
 var (
@@ -137,6 +139,11 @@ func SetInstallConfigDefaults(c *types.InstallConfig) {
 
 	if c.OSImageStream == "" {
 		c.OSImageStream = rhcos.DefaultOSImageStream
+		if !(c.IsSCOS() || c.Enabled(features.FeatureGateOSStreams)) {
+			if v := version.GetVersionComponents(); len(v) > 0 && v[0] < 5 {
+				c.OSImageStream = types.OSImageStreamRHCOS9
+			}
+		}
 	}
 
 	if c.AdditionalTrustBundlePolicy == "" {

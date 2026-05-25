@@ -9,11 +9,14 @@ import (
 
 	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/defaults"
 )
 
 // printStreamJSON is the implementation of print-stream-json
 func printStreamJSON(cmd *cobra.Command, _ []string) error {
-	osImageStream := rhcos.DefaultOSImageStream
+	emptyInstallConfig := types.InstallConfig{}
+	defaults.SetInstallConfigDefaults(&emptyInstallConfig)
+	osImageStream := emptyInstallConfig.OSImageStream
 	streamFlag, err := cmd.Flags().GetString("stream")
 	if err != nil {
 		return err

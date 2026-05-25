@@ -4,6 +4,7 @@ package version
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -83,6 +84,32 @@ func Version() (string, error) {
 		return Raw, fmt.Errorf("release name was incorrectly replaced during extract")
 	}
 	return releaseName, nil
+}
+
+// GetVersionComponents returns the installer/release major/minor/patch version if available.
+func GetVersionComponents() []int {
+	versionString, err := Version()
+	if err != nil {
+		logrus.Warnf("Cannot determine release version from build version: %v", err)
+		return nil
+	}
+	// convert a Go module version tag (e.g. "v1.4.22") into the corresponding OCP version (e.g. "4.22").
+	if strings.HasPrefix(versionString, "v") {
+		parts := strings.SplitN(strings.TrimPrefix(versionString, "v"), ".", 2)
+		versionString = parts[len(parts)-1]
+	}
+
+	componentStrings := strings.Split(versionString, ".")
+	components := []int{}
+	for _, v := range componentStrings {
+		c, err := strconv.Atoi(v)
+		if err != nil {
+			logrus.Warnf("Cannot determine release version from build version %s: %v", versionString, err)
+			return components
+		}
+		components = append(components, c)
+	}
+	return components
 }
 
 // ReleaseArchitecture returns the release image cpu architecture version.

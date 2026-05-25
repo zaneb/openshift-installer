@@ -11,7 +11,7 @@ import (
 const (
 	// DefaultOSImageStream is the OS image stream used when the install-config
 	// does not specify one.
-	DefaultOSImageStream = types.OSImageStreamRHCOS9
+	DefaultOSImageStream = types.OSImageStreamRHCOS10
 
 	payloadImageStreamTagRHCOS9  = "rhel-coreos"
 	payloadImageStreamTagRHCOS10 = "rhel-coreos-10"
